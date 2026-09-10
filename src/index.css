@@ -1,0 +1,48 @@
+@import "tailwindcss";
+
+@layer utilities {
+  .text-2xs {
+    font-size: 0.625rem;
+    line-height: 0.875rem;
+  }
+  .text-3xs {
+    font-size: 0.5625rem;
+    line-height: 0.75rem;
+  }
+}
+
+@media print {
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  body {
+    font-size: 11pt;
+    color: #000 !important;
+    background-color: #fff !important;
+  }
+  .no-print {
+    display: none !important;
+  }
+  .print-area {
+    page-break-after: always;
+    width: 210mm !important;
+    min-height: 297mm !important;
+    box-shadow: none !important;
+    float: none !important;
+    background: #fff !important;
+    border: none !important;
+    margin: 0 !important;
+    padding: 12mm 15mm !important;
+    overflow: visible !important;
+  }
+  .print-avoid-break {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+  }
+  .print-wrap {
+    height: auto !important;
+    display: block !important;
+    overflow: visible !important;
+  }
+}

@@ -1,0 +1,6 @@
+{
+  "name": "나의 수업 성장 리포트",
+  "description": "교원 대상 AI 디지털 교수 학습 역량체계(D3·E3·F3) 렌즈 1 수업 설계 타당성 점검 및 지도안·학습자료 PDF 병합 성장 리포트 웹앱",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
