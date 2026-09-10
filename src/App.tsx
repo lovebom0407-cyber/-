@@ -331,6 +331,17 @@ export function App() {
     }
   };
 
+  const handleOpenAiFeedbackTab = () => {
+    setPreviewMode('ai-feedback');
+    showToast('✨ 수석교사 AI 피드백 탭으로 이동했습니다.');
+    setTimeout(() => {
+      const el = document.getElementById('ai-feedback-panel-container');
+      if (el) {
+        el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+    }, 80);
+  };
+
   const handleCompleteAll = () => {
     setCurrentStep(2);
     setPreviewMode('report');
@@ -418,7 +429,7 @@ export function App() {
                 onFileUpload={handleFileUpload}
                 onComplete={handleCompleteAll}
                 onOpenAiFeedback={() => setIsAiModalOpen(true)}
-                onOpenAiFeedbackTab={() => setPreviewMode('ai-feedback')}
+                onOpenAiFeedbackTab={handleOpenAiFeedbackTab}
               />
             </div>
           )}
@@ -508,7 +519,7 @@ export function App() {
                 onOpenImageModal={setImageModalData}
                 onFileUpload={handleFileUpload}
                 onGoToNextStep={() => handleStepChange(2)}
-                onOpenAiFeedbackTab={() => setPreviewMode('ai-feedback')}
+                onOpenAiFeedbackTab={handleOpenAiFeedbackTab}
               />
             ) : (
               <AiFeedbackPanel

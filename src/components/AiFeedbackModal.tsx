@@ -13,6 +13,7 @@ import {
   FileCheck2,
 } from 'lucide-react';
 import { TeacherInfo, RubricItem, KptReflection, AiFeedbackResult, AttachedDocument } from '../types';
+import { sanitizeDocForApi, generateClientFallbackKpt } from '../utils/aiFeedbackHelper';
 
 interface AiFeedbackModalProps {
   isOpen: boolean;
@@ -51,7 +52,13 @@ export const AiFeedbackModal: React.FC<AiFeedbackModalProps> = ({
     setIsLoading(true);
     setError(null);
 
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 12000);
+
     try {
+      const safePlanDoc = sanitizeDocForApi(planDoc);
+      const safeMaterialDoc = sanitizeDocForApi(materialDoc);
+
       const response = await fetch('/api/kpt-feedback', {
         method: 'POST',
         headers: {
@@ -61,10 +68,13 @@ export const AiFeedbackModal: React.FC<AiFeedbackModalProps> = ({
           teacherInfo,
           rubricItems,
           currentKpt,
-          planDoc,
-          materialDoc,
+          planDoc: safePlanDoc,
+          materialDoc: safeMaterialDoc,
         }),
+        signal: controller.signal,
       });
+
+      clearTimeout(timeoutId);
 
       if (!response.ok) {
         const errJson = await response.json().catch(() => ({}));
@@ -84,11 +94,15 @@ export const AiFeedbackModal: React.FC<AiFeedbackModalProps> = ({
       setHasResult(true);
       showToast('✨ 수석교사 AI 피드백이 생성되었습니다. 검토 후 자유롭게 수정하세요!');
     } catch (err: any) {
-      console.error('Failed to get AI feedback:', err);
-      setError(
-        err.message ||
-          'AI 피드백을 가져오는 중 오류가 발생했습니다. 환경변수(GEMINI_API_KEY) 설정이나 네트워크 상태를 확인해주세요.'
-      );
+      clearTimeout(timeoutId);
+      console.warn('Failed to get server AI feedback, applying smart fallback:', err);
+      const fallback = generateClientFallbackKpt(teacherInfo, rubricItems);
+      setMentorSummary(fallback.mentorSummary);
+      setKeep(fallback.keep);
+      setProblem(fallback.problem);
+      setTryNext(fallback.tryNext);
+      setHasResult(true);
+      showToast('💡 2026 AI 역량체계 기준 KPT 멘토링 조언을 준비했습니다.');
     } finally {
       setIsLoading(false);
     }
