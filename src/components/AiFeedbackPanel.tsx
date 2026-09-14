@@ -65,20 +65,26 @@ export const AiFeedbackPanel: React.FC<AiFeedbackPanelProps> = ({
     setError(null);
     setIsFallbackMode(false);
 
-    // Timeout controller (12s) so user is never frozen if deployment network is sluggish
+    // Timeout controller (35s) allowing robust multi-model failover while preventing infinite wait
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 12000);
+    const timeoutId = setTimeout(() => controller.abort(), 35000);
 
     try {
       // CRITICAL: Strip large PDF binary buffers and base64 canvas images to prevent 413 Payload Too Large!
       const safePlanDoc = sanitizeDocForApi(planDoc);
       const safeMaterialDoc = sanitizeDocForApi(materialDoc);
 
+      const clientApiKey = import.meta.env.VITE_GEMINI_API_KEY;
+      const headers: Record<string, string> = {
+        'Content-Type': 'application/json',
+      };
+      if (clientApiKey) {
+        headers['Authorization'] = `Bearer ${clientApiKey}`;
+      }
+
       const response = await fetch('/api/rubric-feedback', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers,
         body: JSON.stringify({
           teacherInfo,
           rubricItems,
