@@ -13,36 +13,61 @@
 
 @media print {
   @page {
-    size: A4;
-    margin: 0;
+    size: A4 portrait;
+    margin: 8mm 6mm;
   }
+
+  *,
+  *::before,
+  *::after {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  html,
   body {
+    background: #ffffff !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    width: 100% !important;
     font-size: 11pt;
-    color: #000 !important;
-    background-color: #fff !important;
   }
+
   .no-print {
     display: none !important;
   }
-  .print-area {
-    page-break-after: always;
-    width: 210mm !important;
-    min-height: 297mm !important;
-    box-shadow: none !important;
-    float: none !important;
-    background: #fff !important;
-    border: none !important;
+
+  .print-wrap {
     margin: 0 !important;
-    padding: 12mm 15mm !important;
+    padding: 0 !important;
+    width: 100% !important;
+    max-width: 100% !important;
+    display: block !important;
+    height: auto !important;
     overflow: visible !important;
   }
+
+  .print-area {
+    width: 100% !important;
+    max-width: 210mm !important;
+    box-shadow: none !important;
+    background: #fffdf9 !important;
+    border: 2px solid #2d241e !important;
+    border-radius: 18px !important;
+    margin: 0 auto !important;
+    padding: 8mm 10mm !important;
+    overflow: visible !important;
+    page-break-after: auto;
+  }
+
   .print-avoid-break {
     page-break-inside: avoid !important;
     break-inside: avoid !important;
   }
-  .print-wrap {
-    height: auto !important;
-    display: block !important;
-    overflow: visible !important;
+
+  .print-page-break {
+    page-break-before: always !important;
+    break-before: page !important;
   }
 }

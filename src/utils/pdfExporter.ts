@@ -15,35 +15,86 @@ export interface GeneratePdfOptions {
 
 // Convert any image (including data:image/svg+xml or PNG) to JPEG bytes for pdf-lib
 async function convertDataUrlToJpgBytes(dataUrl: string): Promise<Uint8Array> {
+  // If already a standard base64 JPEG
+  if (dataUrl.startsWith('data:image/jpeg;base64,')) {
+    try {
+      const base64Str = dataUrl.split(',')[1];
+      const binaryStr = atob(base64Str);
+      const len = binaryStr.length;
+      const bytes = new Uint8Array(len);
+      for (let i = 0; i < len; i++) {
+        bytes[i] = binaryStr.charCodeAt(i);
+      }
+      return bytes;
+    } catch {
+      // fallback to canvas rendering
+    }
+  }
+
   return new Promise((resolve, reject) => {
     const img = new Image();
-    img.crossOrigin = 'anonymous';
+    // Do not set crossOrigin for data: URLs to prevent taint issues
+    if (!dataUrl.startsWith('data:')) {
+      img.crossOrigin = 'anonymous';
+    }
+
+    const timeout = setTimeout(() => {
+      reject(new Error('Image conversion timed out'));
+    }, 12000);
+
     img.onload = () => {
-      const canvas = document.createElement('canvas');
-      canvas.width = Math.max(img.naturalWidth || img.width, 1000);
-      canvas.height = Math.round((canvas.width * (img.naturalHeight || img.height)) / (img.naturalWidth || img.width)) || 700;
-      const ctx = canvas.getContext('2d');
-      if (!ctx) {
-        reject(new Error('Canvas context not available'));
-        return;
+      clearTimeout(timeout);
+      try {
+        const naturalWidth = img.naturalWidth || img.width || 1200;
+        const naturalHeight = img.naturalHeight || img.height || 850;
+        const width = Math.max(naturalWidth, 1200);
+        const height = Math.round((width * naturalHeight) / naturalWidth) || 850;
+
+        const canvas = document.createElement('canvas');
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          reject(new Error('Canvas context not available'));
+          return;
+        }
+        ctx.fillStyle = '#ffffff';
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+        canvas.toBlob(
+          async (blob) => {
+            if (!blob) {
+              // fallback to dataURL
+              try {
+                const fallbackDataUrl = canvas.toDataURL('image/jpeg', 0.95);
+                const base64Str = fallbackDataUrl.split(',')[1];
+                const binaryStr = atob(base64Str);
+                const bytes = new Uint8Array(binaryStr.length);
+                for (let i = 0; i < binaryStr.length; i++) {
+                  bytes[i] = binaryStr.charCodeAt(i);
+                }
+                resolve(bytes);
+              } catch (e) {
+                reject(new Error('Failed to create blob or dataURL'));
+              }
+              return;
+            }
+            const buf = await blob.arrayBuffer();
+            resolve(new Uint8Array(buf));
+          },
+          'image/jpeg',
+          0.95
+        );
+      } catch (err) {
+        clearTimeout(timeout);
+        reject(err);
       }
-      ctx.fillStyle = '#ffffff';
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
-      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-      canvas.toBlob(
-        async (blob) => {
-          if (!blob) {
-            reject(new Error('Failed to create blob'));
-            return;
-          }
-          const buf = await blob.arrayBuffer();
-          resolve(new Uint8Array(buf));
-        },
-        'image/jpeg',
-        0.95
-      );
     };
-    img.onerror = (e) => reject(e);
+    img.onerror = (e) => {
+      clearTimeout(timeout);
+      reject(new Error(`Failed to load image data URL: ${e}`));
+    };
     img.src = dataUrl;
   });
 }
@@ -156,10 +207,15 @@ export async function exportPosterToPdf({
     const safeDate = (date || '2026').replace(/[^\w-]/g, '_');
     link.href = downloadUrl;
     link.download = `수업_성장_리포트_${safeTeacherName}_${safeDate}_교수학습자료포함.pdf`;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(downloadUrl);
+    setTimeout(() => {
+      if (document.body.contains(link)) {
+        document.body.removeChild(link);
+      }
+      URL.revokeObjectURL(downloadUrl);
+    }, 1500);
 
     return true;
   } catch (error) {
@@ -209,5 +265,20 @@ async function appendImageAsPage(pdfDoc: PDFDocument, dataUrl: string, title: st
     });
   } catch (err) {
     console.warn(`Failed to append image page for ${title}:`, err);
+    // Draw a placeholder page so the PDF isn't missing the section
+    try {
+      const page = pdfDoc.addPage([A4_WIDTH, A4_HEIGHT]);
+      page.drawRectangle({
+        x: 18,
+        y: 18,
+        width: A4_WIDTH - 36,
+        height: A4_HEIGHT - 36,
+        borderWidth: 1.5,
+        borderColor: rgb(0.85, 0.82, 0.78),
+        color: rgb(0.99, 0.99, 0.98),
+      });
+    } catch {
+      // ignore
+    }
   }
 }

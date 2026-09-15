@@ -42,10 +42,10 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
                 </div>
                 <div>
                   <h3 className="text-base font-bold text-stone-800">
-                    통합 A4 PDF 리포트 내보내기
+                    PDF 내보내기
                   </h3>
                   <p className="text-[11px] text-stone-500">
-                    나의 수업 성장 리포트 + 지도안 PDF + 학습자료 PDF 자동 병합
+                    나의 수업 성장 리포트 + 지도안 PDF + 학습자료 PDF
                   </p>
                 </div>
               </div>
@@ -118,30 +118,30 @@ export const PdfExportModal: React.FC<PdfExportModalProps> = ({
               <button
                 type="button"
                 disabled={isGeneratingPdf}
-                onClick={onDownloadPdf}
+                onClick={onBrowserPrint}
                 className="w-full py-3.5 bg-gradient-to-r from-amber-600 via-orange-600 to-amber-700 hover:from-amber-700 hover:to-orange-700 disabled:opacity-60 text-white text-xs font-bold rounded-xl transition-all shadow-md shadow-orange-100 flex items-center justify-center space-x-2 cursor-pointer"
               >
-                {isGeneratingPdf ? (
-                  <>
-                    <div className="w-3.5 h-3.5 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                    <span>병합 PDF 생성 중... (잠시만 기다려주세요)</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 text-white" />
-                    <span>통합 A4 PDF 다운로드 (교수학습자료 포함)</span>
-                  </>
-                )}
+                <Printer className="w-4 h-4 text-white" />
+                <span>PDF 내보내기 (브라우저 기본 인쇄 창 열기)</span>
               </button>
 
               <button
                 type="button"
                 disabled={isGeneratingPdf}
-                onClick={onBrowserPrint}
+                onClick={onDownloadPdf}
                 className="w-full py-2.5 bg-stone-100 hover:bg-stone-200 disabled:opacity-50 text-stone-700 text-xs font-bold rounded-xl transition-all flex items-center justify-center space-x-2 cursor-pointer"
               >
-                <Printer className="w-3.5 h-3.5" />
-                <span>브라우저 기본 인쇄 (현재 1쪽 화면 인쇄)</span>
+                {isGeneratingPdf ? (
+                  <>
+                    <div className="w-3.5 h-3.5 border-2 border-stone-600/40 border-t-stone-600 rounded-full animate-spin" />
+                    <span>병합 PDF 생성 중... (잠시만 기다려주세요)</span>
+                  </>
+                ) : (
+                  <>
+                    <Download className="w-3.5 h-3.5" />
+                    <span>통합 PDF 파일로 직접 다운로드</span>
+                  </>
+                )}
               </button>
 
               <button

@@ -51,8 +51,8 @@ export const DocumentReader: React.FC<DocumentReaderProps> = ({
   const totalPages = activeDoc?.pageImages?.length || activeDoc?.pageCount || 1;
   const currentImage = activeDoc?.pageImages?.[currentPage] || activeDoc?.dataUrl;
 
-  const handleZoomIn = () => setZoomLevel((prev) => Math.min(prev + 0.2, 2.5));
-  const handleZoomOut = () => setZoomLevel((prev) => Math.max(prev - 0.2, 0.6));
+  const handleZoomIn = () => setZoomLevel((prev) => Math.min(Math.round((prev + 0.2) * 10) / 10, 2.5));
+  const handleZoomOut = () => setZoomLevel((prev) => Math.max(Math.round((prev - 0.2) * 10) / 10, 0.6));
   const handleResetZoom = () => setZoomLevel(1);
 
   const handleOpenFullscreen = () => {

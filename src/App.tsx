@@ -350,8 +350,14 @@ export function App() {
 
   const handleDownloadPdf = async () => {
     setIsGeneratingPdf(true);
-    setPdfProgressMsg('1단계: 수업 성장 리포트 포스터 고해상도 렌더링 중...');
+    setPdfProgressMsg('1단계: 수업 성장 리포트 포스터 고해상도 렌더링 준비 중...');
     try {
+      // If user is on documents or ai-feedback tab, switch to report view first so poster element is mounted
+      if (previewMode !== 'report') {
+        setPreviewMode('report');
+        await new Promise((resolve) => setTimeout(resolve, 300));
+      }
+
       await exportPosterToPdf({
         element: posterRef.current,
         teacherName: teacherInfo.teacherName,
@@ -374,23 +380,28 @@ export function App() {
     }
   };
 
-  const handleBrowserPrint = () => {
-    try {
-      setIsPdfModalOpen(false);
-      setTimeout(() => {
-        try {
-          window.focus();
-          window.print();
-        } catch (err) {
-          console.error('Print call failed:', err);
-          window.alert(
-            `⚠️ 브라우저 보안 정책(iframe 제한)으로 인해 인쇄창을 직접 호출하지 못했습니다.\n\n💡 해결 방법:\n1. '통합 A4 PDF 다운로드' 버튼을 눌러 교수학습자료가 자동 병합된 PDF로 소장하세요.\n2. 또는 우측 상단의 '새 창에서 열기' 버튼을 눌러 새 탭에서 실행한 뒤 인쇄를 시도해 주세요!`
-          );
-        }
-      }, 250);
-    } catch (err) {
-      console.error('Print action failed:', err);
+  const handleExportPdf = () => {
+    // 1. If currently in documents or ai-feedback tab, switch to report view first
+    if (previewMode !== 'report') {
+      setPreviewMode('report');
     }
+    // Close any open modal overlays
+    setIsPdfModalOpen(false);
+    setIsAiModalOpen(false);
+    setImageModalData(null);
+
+    showToast('🖨️ 브라우저 인쇄 화면으로 이동합니다. 대상(프린터)에서 [PDF로 저장]을 선택하세요.');
+
+    // 2. Open browser's native print screen immediately
+    setTimeout(() => {
+      try {
+        window.focus();
+        window.print();
+      } catch (err) {
+        console.error('Browser print failed:', err);
+        showToast('⚠️ iframe 환경 제한 시 상단의 새 창(새 탭) 열기 버튼을 누른 후 인쇄해 주세요.');
+      }
+    }, 150);
   };
 
   return (
@@ -403,6 +414,7 @@ export function App() {
         onToggleFullView={() => setIsFullView(!isFullView)}
         onLoadPreset={handleLoadPreset}
         onShare={handleShare}
+        onExportPdf={handleExportPdf}
       />
 
       {/* Main Content Area */}
@@ -506,6 +518,7 @@ export function App() {
                 kpt={kpt}
                 planDoc={planDoc}
                 materialDoc={materialDoc}
+                onExportPdf={handleExportPdf}
                 onOpenPdfModal={() => setIsPdfModalOpen(true)}
                 onOpenImageModal={setImageModalData}
                 onOpenAiFeedbackModal={() => setIsAiModalOpen(true)}
@@ -558,7 +571,7 @@ export function App() {
         pdfProgressMsg={pdfProgressMsg}
         onClose={() => setIsPdfModalOpen(false)}
         onDownloadPdf={handleDownloadPdf}
-        onBrowserPrint={handleBrowserPrint}
+        onBrowserPrint={handleExportPdf}
       />
 
       <ImageModal

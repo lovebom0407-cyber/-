@@ -1,5 +1,5 @@
 import React from 'react';
-import { BookOpen, Sparkles, Share2, Layers, Eye } from 'lucide-react';
+import { BookOpen, Sparkles, Share2, Layers, Eye, Printer } from 'lucide-react';
 import { TeacherInfo } from '../types';
 
 interface HeaderProps {
@@ -9,6 +9,7 @@ interface HeaderProps {
   onToggleFullView: () => void;
   onLoadPreset: () => void;
   onShare: () => void;
+  onExportPdf?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -18,6 +19,7 @@ export const Header: React.FC<HeaderProps> = ({
   onToggleFullView,
   onLoadPreset,
   onShare,
+  onExportPdf,
 }) => {
   return (
     <>
@@ -45,6 +47,19 @@ export const Header: React.FC<HeaderProps> = ({
         </div>
 
         <div className="flex items-center space-x-2">
+          {onExportPdf && (
+            <button
+              id="btn-header-export-pdf"
+              type="button"
+              onClick={onExportPdf}
+              className="flex items-center space-x-1.5 px-3.5 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-orange-100 cursor-pointer"
+              title="브라우저 인쇄 화면으로 바로 이동하여 PDF로 인쇄하거나 저장합니다"
+            >
+              <Printer className="w-3.5 h-3.5" />
+              <span>PDF 내보내기</span>
+            </button>
+          )}
+
           {!isViewOnly && (
             <>
               <button

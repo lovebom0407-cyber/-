@@ -1,10 +1,12 @@
-import React, { RefObject } from 'react';
+import React, { useState, RefObject } from 'react';
 import {
   Printer,
   Sparkle,
   Award,
   CircleCheck,
   ZoomIn,
+  ZoomOut,
+  RotateCcw,
   FileText,
   Compass,
   Brain,
@@ -25,7 +27,8 @@ interface PosterReportProps {
   kpt: KptReflection;
   planDoc: AttachedDocument | null;
   materialDoc: AttachedDocument | null;
-  onOpenPdfModal: () => void;
+  onExportPdf?: () => void;
+  onOpenPdfModal?: () => void;
   onOpenImageModal: (data: ImageModalData) => void;
   onOpenAiFeedbackModal?: () => void;
 }
@@ -39,10 +42,14 @@ export const PosterReport: React.FC<PosterReportProps> = ({
   kpt,
   planDoc,
   materialDoc,
+  onExportPdf,
   onOpenPdfModal,
   onOpenImageModal,
   onOpenAiFeedbackModal,
 }) => {
+  const [planZoom, setPlanZoom] = useState<number>(1);
+  const [materialZoom, setMaterialZoom] = useState<number>(1);
+
   const totalScore = rubricItems.reduce((acc, curr) => acc + curr.score, 0);
 
   // Sub-scores
@@ -113,13 +120,14 @@ export const PosterReport: React.FC<PosterReportProps> = ({
           )}
 
           <button
-            id="btn-open-pdf-modal"
+            id="btn-export-pdf"
             type="button"
-            onClick={onOpenPdfModal}
+            onClick={onExportPdf || onOpenPdfModal}
             className="flex items-center space-x-1.5 px-4 py-1.5 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white text-xs font-bold rounded-xl transition-all shadow-sm shadow-orange-100 cursor-pointer"
+            title="브라우저 인쇄 화면으로 바로 이동하여 PDF로 인쇄하거나 저장합니다"
           >
             <Printer className="w-3.5 h-3.5" />
-            <span>PDF 내보내기 (교수학습자료 자동 병합)</span>
+            <span>PDF 내보내기</span>
           </button>
         </div>
       </div>
@@ -374,9 +382,50 @@ export const PosterReport: React.FC<PosterReportProps> = ({
                   <FileCheck2 className="w-4 h-4 text-orange-600" />
                   <span>1) 지도안 PDF</span>
                 </span>
-                <span className="text-xs text-amber-900 bg-amber-100 font-bold px-2 py-0.5 rounded-md border border-amber-200">
-                  {planDoc?.name || '지도안 문서'}
-                </span>
+                <div className="flex items-center space-x-1.5">
+                  {/* Zoom In/Out Buttons for Plan Doc Preview */}
+                  <div className="no-print flex items-center bg-stone-100/90 border border-stone-200 rounded-lg p-0.5 space-x-0.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlanZoom((prev) => Math.max(Math.round((prev - 0.2) * 10) / 10, 0.6));
+                      }}
+                      className="p-1 hover:bg-stone-200 text-stone-600 rounded cursor-pointer"
+                      title="지도안 미리보기 축소"
+                    >
+                      <ZoomOut className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[10px] font-mono font-bold text-stone-600 px-1 min-w-[2.6rem] text-center select-none">
+                      {Math.round(planZoom * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlanZoom((prev) => Math.min(Math.round((prev + 0.2) * 10) / 10, 2.0));
+                      }}
+                      className="p-1 hover:bg-stone-200 text-stone-600 rounded cursor-pointer"
+                      title="지도안 미리보기 확대"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setPlanZoom(1);
+                      }}
+                      className="p-1 hover:bg-stone-200 text-stone-600 rounded cursor-pointer"
+                      title="지도안 크기 초기화 (100%)"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <span className="text-xs text-amber-900 bg-amber-100 font-bold px-2 py-0.5 rounded-md border border-amber-200 truncate max-w-[130px]">
+                    {planDoc?.name || '지도안 문서'}
+                  </span>
+                </div>
               </div>
 
               <div
@@ -393,13 +442,22 @@ export const PosterReport: React.FC<PosterReportProps> = ({
               >
                 {planDoc?.dataUrl ? (
                   <>
-                    <img
-                      src={planDoc.dataUrl}
-                      className="w-full h-full object-contain mx-auto transition-transform duration-300 group-hover:scale-[1.01]"
-                      alt="지도안 미리보기"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="no-print absolute inset-0 bg-stone-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
+                    <div
+                      style={{
+                        transform: `scale(${planZoom})`,
+                        transformOrigin: 'center center',
+                        transition: 'transform 0.15s ease-out',
+                      }}
+                      className="w-full h-full flex items-center justify-center overflow-hidden"
+                    >
+                      <img
+                        src={planDoc.dataUrl}
+                        className="w-full h-full object-contain mx-auto"
+                        alt="지도안 미리보기"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div className="no-print absolute inset-0 bg-stone-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px] pointer-events-none">
                       <div className="bg-stone-900/90 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg border border-stone-700 flex items-center space-x-2 transform scale-95 group-hover:scale-100 transition-transform duration-300">
                         <ZoomIn className="w-4 h-4 text-amber-400" />
                         <span>문서 원본 확대보기</span>
@@ -422,9 +480,50 @@ export const PosterReport: React.FC<PosterReportProps> = ({
                   <FileCheck2 className="w-4 h-4 text-emerald-600" />
                   <span>2) 학습자료 PDF</span>
                 </span>
-                <span className="text-xs text-emerald-900 bg-emerald-100 font-bold px-2 py-0.5 rounded-md border border-emerald-200">
-                  {materialDoc?.name || '학습자료 문서'}
-                </span>
+                <div className="flex items-center space-x-1.5">
+                  {/* Zoom In/Out Buttons for Material Doc Preview */}
+                  <div className="no-print flex items-center bg-stone-100/90 border border-stone-200 rounded-lg p-0.5 space-x-0.5">
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMaterialZoom((prev) => Math.max(Math.round((prev - 0.2) * 10) / 10, 0.6));
+                      }}
+                      className="p-1 hover:bg-stone-200 text-stone-600 rounded cursor-pointer"
+                      title="학습자료 미리보기 축소"
+                    >
+                      <ZoomOut className="w-3.5 h-3.5" />
+                    </button>
+                    <span className="text-[10px] font-mono font-bold text-stone-600 px-1 min-w-[2.6rem] text-center select-none">
+                      {Math.round(materialZoom * 100)}%
+                    </span>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMaterialZoom((prev) => Math.min(Math.round((prev + 0.2) * 10) / 10, 2.0));
+                      }}
+                      className="p-1 hover:bg-stone-200 text-stone-600 rounded cursor-pointer"
+                      title="학습자료 미리보기 확대"
+                    >
+                      <ZoomIn className="w-3.5 h-3.5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setMaterialZoom(1);
+                      }}
+                      className="p-1 hover:bg-stone-200 text-stone-600 rounded cursor-pointer"
+                      title="학습자료 크기 초기화 (100%)"
+                    >
+                      <RotateCcw className="w-3 h-3" />
+                    </button>
+                  </div>
+                  <span className="text-xs text-emerald-900 bg-emerald-100 font-bold px-2 py-0.5 rounded-md border border-emerald-200 truncate max-w-[130px]">
+                    {materialDoc?.name || '학습자료 문서'}
+                  </span>
+                </div>
               </div>
 
               <div
@@ -441,13 +540,22 @@ export const PosterReport: React.FC<PosterReportProps> = ({
               >
                 {materialDoc?.dataUrl ? (
                   <>
-                    <img
-                      src={materialDoc.dataUrl}
-                      className="w-full h-full object-contain mx-auto transition-transform duration-300 group-hover:scale-[1.01]"
-                      alt="학습자료 미리보기"
-                      referrerPolicy="no-referrer"
-                    />
-                    <div className="no-print absolute inset-0 bg-stone-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px]">
+                    <div
+                      style={{
+                        transform: `scale(${materialZoom})`,
+                        transformOrigin: 'center center',
+                        transition: 'transform 0.15s ease-out',
+                      }}
+                      className="w-full h-full flex items-center justify-center overflow-hidden"
+                    >
+                      <img
+                        src={materialDoc.dataUrl}
+                        className="w-full h-full object-contain mx-auto"
+                        alt="학습자료 미리보기"
+                        referrerPolicy="no-referrer"
+                      />
+                    </div>
+                    <div className="no-print absolute inset-0 bg-stone-900/10 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center backdrop-blur-[1px] pointer-events-none">
                       <div className="bg-stone-900/90 text-white font-extrabold text-xs px-4 py-2.5 rounded-xl shadow-lg border border-stone-700 flex items-center space-x-2 transform scale-95 group-hover:scale-100 transition-transform duration-300">
                         <ZoomIn className="w-4 h-4 text-emerald-400" />
                         <span>문서 원본 확대보기</span>
@@ -540,6 +648,49 @@ export const PosterReport: React.FC<PosterReportProps> = ({
           </div>
         </div>
       </div>
+
+      {/* Print-Only Subsequent Pages for Attached Documents */}
+      {planDoc?.dataUrl && (
+        <div className="hidden print:block print-page-break print-area bg-white rounded-2xl border-2 border-[#2d241e] p-8 space-y-4">
+          <div className="border-b-2 border-[#2d241e] pb-3 flex justify-between items-center text-xs font-bold text-stone-800">
+            <span className="text-sm font-serif font-bold text-amber-950">
+              [교수학습 연계자료 1] 지도안: {planDoc.name || '지도안 문서'}
+            </span>
+            <span className="text-stone-500 font-mono text-[11px]">
+              2026 나의 수업 성장 리포트 부속자료
+            </span>
+          </div>
+          <div className="w-full flex items-center justify-center py-2">
+            <img
+              src={planDoc.dataUrl}
+              className="max-h-[245mm] w-auto max-w-full object-contain mx-auto"
+              alt="지도안 원본"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </div>
+      )}
+
+      {materialDoc?.dataUrl && (
+        <div className="hidden print:block print-page-break print-area bg-white rounded-2xl border-2 border-[#2d241e] p-8 space-y-4">
+          <div className="border-b-2 border-[#2d241e] pb-3 flex justify-between items-center text-xs font-bold text-stone-800">
+            <span className="text-sm font-serif font-bold text-emerald-950">
+              [교수학습 연계자료 2] 학습자료: {materialDoc.name || '학습자료 문서'}
+            </span>
+            <span className="text-stone-500 font-mono text-[11px]">
+              2026 나의 수업 성장 리포트 부속자료
+            </span>
+          </div>
+          <div className="w-full flex items-center justify-center py-2">
+            <img
+              src={materialDoc.dataUrl}
+              className="max-h-[245mm] w-auto max-w-full object-contain mx-auto"
+              alt="학습자료 원본"
+              referrerPolicy="no-referrer"
+            />
+          </div>
+        </div>
+      )}
     </div>
   );
 };
